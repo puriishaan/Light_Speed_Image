@@ -1,0 +1,117 @@
+import React, { useState, useEffect, useRef } from 'react';
+
+const PhotoCubeEffect = () => {
+  const [squarePosition, setSquarePosition] = useState(-50);
+  const [isFlashing, setIsFlashing] = useState(false);
+  const [showCube, setShowCube] = useState(false);
+  const [cubeRotation, setCubeRotation] = useState(-45);
+  const [lastSquarePosition, setLastSquarePosition] = useState(0);
+  const animationRef = useRef();
+
+  const moveSquare = () => {
+    setSquarePosition(prev => {
+      const newPos = prev > window.innerWidth ? -50 : prev + 15; // Increased speed
+      setLastSquarePosition(newPos);
+      return newPos;
+    });
+    animationRef.current = requestAnimationFrame(moveSquare);
+  };
+
+  useEffect(() => {
+    animationRef.current = requestAnimationFrame(moveSquare);
+    return () => cancelAnimationFrame(animationRef.current);
+  }, []);
+
+  const takePhoto = () => {
+    cancelAnimationFrame(animationRef.current);
+    setIsFlashing(true);
+    setTimeout(() => {
+      setIsFlashing(false);
+      setShowCube(true);
+      setCubeRotation(prev => prev + 90);
+    }, 150);
+  };
+
+  return (
+    <div style={{ 
+      width: '100vw', 
+      height: '100vh', 
+      backgroundColor: 'black', 
+      overflow: 'hidden',
+      perspective: '1000px'
+    }}>
+      {!showCube && (
+        <div style={{
+          width: '50px',
+          height: '50px',
+          backgroundColor: 'white',
+          position: 'absolute',
+          top: '50%',
+          left: `${squarePosition}px`,
+          transform: 'translateY(-50%)',
+        }} />
+      )}
+      
+      {showCube && (
+        <div style={{
+          width: '50px',
+          height: '50px',
+          position: 'absolute',
+          top: '50%',
+          left: `${lastSquarePosition}px`,
+          transformStyle: 'preserve-3d',
+          transform: `translateY(-50%) rotateY(${cubeRotation}deg)`,
+          transition: 'transform 0.5s ease',
+        }}>
+          {['front', 'back', 'right', 'left', 'top', 'bottom'].map((face) => (
+            <div key={face} style={{
+              position: 'absolute',
+              width: '50px',
+              height: '50px',
+              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+              border: '1px solid black',
+              transform: 
+                face === 'front' ? 'translateZ(25px)' :
+                face === 'back' ? 'translateZ(-25px) rotateY(180deg)' :
+                face === 'right' ? 'translateX(25px) rotateY(90deg)' :
+                face === 'left' ? 'translateX(-25px) rotateY(-90deg)' :
+                face === 'top' ? 'translateY(-25px) rotateX(90deg)' :
+                'translateY(25px) rotateX(-90deg)'
+            }} />
+          ))}
+        </div>
+      )}
+      
+      <button onClick={takePhoto} style={{
+        position: 'absolute',
+        top: '20px',
+        left: '20px',
+        padding: '10px 20px',
+        fontSize: '16px',
+        cursor: 'pointer',
+        backgroundColor: '#4CAF50',
+        color: 'white',
+        border: 'none',
+        borderRadius: '5px',
+        zIndex: 10,
+      }}>
+        Take Photo
+      </button>
+      
+      {isFlashing && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'white',
+          opacity: 0.8,
+          transition: 'opacity 0.15s ease',
+        }} />
+      )}
+    </div>
+  );
+};
+
+export default PhotoCubeEffect;
